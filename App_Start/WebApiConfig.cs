@@ -6,6 +6,8 @@ using System.Web.Http;
 using Microsoft.Owin.Security.OAuth;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
+using System.Web.Http.Cors;
+
 
 namespace ChatterboxAPI
 {
@@ -22,9 +24,13 @@ namespace ChatterboxAPI
             config.SuppressDefaultHostAuthentication();
             config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));
 
+            // Web API configuration and services
+            var cors = new EnableCorsAttribute("https://www.superlosos.com:44363", "*", "*");
+         //   config.EnableCors(cors);
+
             // Web API routes
             config.MapHttpAttributeRoutes();
-            config.EnableCors();
+            config.EnableCors(cors);
 
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",

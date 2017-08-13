@@ -80,16 +80,16 @@ namespace ChatterboxAPI.Controllers
         /// <summary>
         /// [Temporary solution] Remove user from DB.
         /// </summary>
-        /// <param name="id">USer id</param>
+        /// <param name="memberId">USer id</param>
         /// <returns>Users amount left.</returns>
         [HttpDelete, Route("{id}/", Name = "DeleteMember")]
-        public IHttpActionResult DeleteMember(int id)
+        public IHttpActionResult DeleteMember(int memberId)
         {
-            var member = _context.Members.Include(m => m.Rooms).SingleOrDefault(m => m.Id == id);
+            var member = _context.Members.Include(m => m.Rooms).SingleOrDefault(m => m.Id == memberId);
 
             if(member == null)
             {
-                ThrowNotFoundException("member", id);
+                ThrowNotFoundException("member", memberId);
             }
 
             _context.Members.Remove(member);

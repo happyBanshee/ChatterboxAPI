@@ -16,6 +16,7 @@ namespace ChatterboxAPI.DTOs
         public string Description { set; get; }
         public bool IsPrivate { get; set; }
         public IEnumerable<MemberNoRoomDTO> Members { set; get; }
+        public string CreatorId { set; get; }
        // public IEnumerable<Link> Links { set; get; }
     }
 }

@@ -505,7 +505,7 @@
             <summary>
             [Temporary solution] Remove user from DB.
             </summary>
-            <param name="id">USer id</param>
+            <param name="memberId">USer id</param>
             <returns>Users amount left.</returns>
         </member>
         <member name="M:ChatterboxAPI.Controllers.RoomsController.GetRooms">
@@ -554,7 +554,7 @@
             <summary>
             Add user to chat.
             </summary>
-            <param name="id">Chat id.</param>
+            <param name="roomId">Chat id.</param>
             <param name="memberId">User Id.</param>
             <returns>Status code 200 OK.</returns>
         </member>
@@ -562,7 +562,7 @@
             <summary>
             Remove user from chat.
             </summary>
-            <param name="id">Chat id.</param>
+            <param name="roomId">Chat id.</param>
             <param name="memberId">User id.</param>
             <returns>Status code 200 OK.</returns>
         </member>

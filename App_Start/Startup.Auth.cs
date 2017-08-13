@@ -40,7 +40,7 @@ namespace ChatterboxAPI
                 AuthorizeEndpointPath = new PathString("/api/Account/ExternalLogin"),
                 AccessTokenExpireTimeSpan = TimeSpan.FromDays(14),
                 // In production mode set AllowInsecureHttp = false
-                AllowInsecureHttp = true
+                AllowInsecureHttp = false
             };
 
             // Enable the application to use bearer tokens to authenticate users
@@ -55,15 +55,14 @@ namespace ChatterboxAPI
             //    consumerKey: "",
             //    consumerSecret: "");
 
-            app.UseFacebookAuthentication(
-                appId: "252008028644621",
-                appSecret: "f4fcf97cb69d70b8fbc26a2d099bb560");
+            //app.UseFacebookAuthentication(
+            //    appId: "252008028644621",
+            //    appSecret: "f4fcf97cb69d70b8fbc26a2d099bb560");
 
-            //app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions()
-            //{
-            //    ClientId = "",
-            //    ClientSecret = ""
-            //});
+            app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions() {
+                ClientId = "987931193471-c8t9ad5s5s46e92cvi5lf0anfmtna5os.apps.googleusercontent.com",
+                ClientSecret = "ckCSc8leh-NhSCmXdZ2cDZo0"
+            });
         }
     }
 }

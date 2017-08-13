@@ -16,10 +16,12 @@ using Microsoft.Owin.Security.OAuth;
 using ChatterboxAPI.Models;
 using ChatterboxAPI.Providers;
 using ChatterboxAPI.Results;
+using System.ServiceModel.Channels;
+
 
 namespace ChatterboxAPI.Controllers
 {
-    [Authorize]
+      //[Authorize]
     [RoutePrefix("api/Account")]
     public class AccountController : ApiController
     {
@@ -52,12 +54,12 @@ namespace ChatterboxAPI.Controllers
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
         // GET api/Account/UserInfo
-        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+      //  [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
         [Route("UserInfo")]
         public UserInfoViewModel GetUserInfo()
         {
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
-
+            
             return new UserInfoViewModel
             {
                 Email = User.Identity.GetUserName(),
@@ -232,7 +234,9 @@ namespace ChatterboxAPI.Controllers
                 return Redirect(Url.Content("~/") + "#error=" + Uri.EscapeDataString(error));
             }
 
-            if (!User.Identity.IsAuthenticated)
+            //    HttpRequestMessageExtensionMethods.
+
+            if(!User.Identity.IsAuthenticated)
             {
                 return new ChallengeResult(provider, this);
             }
