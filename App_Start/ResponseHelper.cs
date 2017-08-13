@@ -15,7 +15,13 @@ namespace ChatterboxAPI.App_Start
     public class ResponseMessage
     {
         public string Message { set; get; }
-        public int Status { set; get; }
+     //   public int Status { set; get; }
+    }
+
+    public class ResponseObject
+    {
+        //public string Message { set; get; }
+           public int Id { set; get; }
     }
 
     public class ResponseHelper : ApiController
@@ -25,17 +31,31 @@ namespace ChatterboxAPI.App_Start
         public HttpResponseMessage CreateResponse(HttpStatusCode status, string message)
         {
             ResponseMessage msg = new ResponseMessage {
-                Message = message,
-                Status = (int) status
+                Message = message
             };
 
             HttpResponseMessage response = RequestHelper.CreateResponse(
-               HttpStatusCode.Created,
+               status,
                msg,
                "application/json"
               );
             return response;
         }
+
+        public HttpResponseMessage CreateResponse(int id, HttpStatusCode status)
+        {
+            ResponseObject obj = new ResponseObject {
+                Id = id
+            };
+
+            HttpResponseMessage response = RequestHelper.CreateResponse(
+               status,
+               obj,
+               "application/json"
+              );
+            return response;
+        }
+
 
         public HttpResponseMessage CreateResponse(HttpStatusCode status, RoomDTO roomDTO)
         {
@@ -95,8 +115,8 @@ namespace ChatterboxAPI.App_Start
             HttpStatusCode status = HttpStatusCode.NotFound;
 
             ResponseMessage msg = new ResponseMessage {
-                Message = "No " + itemName + " with ID = "+ id,
-                Status = (int) status
+                Message = "No " + itemName + " with ID = "+ id
+               // Status = (int) status
             };
 
             HttpResponseMessage response = RequestHelper.CreateResponse(
@@ -108,7 +128,15 @@ namespace ChatterboxAPI.App_Start
         }
 
 
-        private void ThrowNotFoundResponse(string itemName, string id)
+        public void ThrowNotFoundResponse(string itemName, string id)
+        {
+            var resp = new HttpResponseMessage(HttpStatusCode.NotFound) {
+                Content = new StringContent(string.Format("No " + itemName + " with ID = {0}", id)),
+                ReasonPhrase = "ID " + itemName + " Not Found"
+            };
+            throw new HttpResponseException(resp);
+        }
+        public void ThrowNotFoundResponse(string itemName, int id)
         {
             var resp = new HttpResponseMessage(HttpStatusCode.NotFound) {
                 Content = new StringContent(string.Format("No " + itemName + " with ID = {0}", id)),

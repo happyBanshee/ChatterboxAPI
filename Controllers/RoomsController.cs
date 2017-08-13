@@ -76,13 +76,11 @@ namespace ChatterboxAPI.Controllers
         [ResponseType(typeof(IEnumerable<RoomNoMemberDTO>))]
         public IHttpActionResult GetRooms()
         {
-            responseData.RequestHelper = Request;
             var roomCollection = _context.Rooms.ToList();
             var roomDtoCollection = _context.Rooms.ToList().Select(Mapper.Map<Room, RoomNoMemberDTO>);
-            //var roomDtoCollectionMapped = roomDtoCollection.Select(r => {
-            //    r.Links = CreateLinks(r);
-            //    return r;
-            //});
+
+            responseData.RequestHelper = Request;
+
             return Ok(roomDtoCollection);
         }
 
@@ -94,21 +92,21 @@ namespace ChatterboxAPI.Controllers
         [HttpGet, Route("{id:int}")]
         [Authorize]
         [ResponseType(typeof(RoomDTO))]
-        public HttpResponseMessage GetRoom(int id)
+        public IHttpActionResult GetRoom(int id)
         {
             responseData.RequestHelper = Request;
+            //TODO: authorization
+
             Room room = _context.Rooms.SingleOrDefault(r => r.Id == id);
 
             if(room == null)
             {
-                return responseData.CreateNotFoundResponse("room", id);
+                responseData.ThrowNotFoundResponse("room", id);
             }
-
-            //TODO: authorization
 
             RoomDTO roomDTO = Mapper.Map<Room, RoomDTO>(room);
 
-            return responseData.CreateResponse(status: HttpStatusCode.OK, roomDTO: roomDTO);
+            return Ok(roomDTO);
         }
         /// <summary>
         /// Update chat data.
@@ -138,8 +136,9 @@ namespace ChatterboxAPI.Controllers
             var updatedRoom = Mapper.Map<RoomDTO, Room>(roomDTO, room);
             _context.SaveChanges();
 
-            return responseData.CreateResponse(status: HttpStatusCode.OK, roomDTO: roomDTO);
+            return responseData.CreateResponse(status: HttpStatusCode.OK, message: "Chat data was successfully updated");
         }
+
         /// <summary>
         /// Remove chat from DB.
         /// </summary>
@@ -190,7 +189,7 @@ namespace ChatterboxAPI.Controllers
 
             roomDTO.Id = room.Id;
 
-            return responseData.CreateResponse(status: HttpStatusCode.Created, uri: new Uri(Request.RequestUri + "/" + room.Id));//, roomDTO);
+            return responseData.CreateResponse(status: HttpStatusCode.Created, id: room.Id);
         }
 
         /// <summary>
@@ -200,7 +199,7 @@ namespace ChatterboxAPI.Controllers
         /// <returns>List of object type MemberNoRoomDTO.</returns>
         [HttpGet, Route("{id:int}/members", Name = "GetRoomMembers")]
         [ResponseType(typeof(IEnumerable<MemberNoRoomDTO>))]
-        public HttpResponseMessage GetRoomMembers(int id)
+        public IHttpActionResult GetRoomMembers(int id)
         {
             //authorization
             responseData.RequestHelper = Request;
@@ -208,7 +207,7 @@ namespace ChatterboxAPI.Controllers
 
             if(room == null)
             {
-                return responseData.CreateNotFoundResponse("room", id);
+                responseData.ThrowNotFoundResponse("room", id);
             }
 
             var allmembers = from members in _context.Members
@@ -217,7 +216,7 @@ namespace ChatterboxAPI.Controllers
                              select members;
             IEnumerable<MemberNoRoomDTO> roomMembers = allmembers.ToList().Select(Mapper.Map<Member, MemberNoRoomDTO>);
 
-            return responseData.CreateResponse(status: HttpStatusCode.Created, roomMembers: roomMembers);
+            return Ok(roomMembers);
         }
 
         /// <summary>
@@ -301,14 +300,14 @@ namespace ChatterboxAPI.Controllers
         [HttpGet, Route("{id:int}/messages", Name = "GetRoomMessages")]
         [Authorize]
         [ResponseType(typeof(IEnumerable<MessageDTO>))]
-        public HttpResponseMessage GetRoomMessages(int id)
+        public IHttpActionResult GetRoomMessages(int id)
         {
             responseData.RequestHelper = Request;
             Room room = _context.Rooms.Include(r => r.Members).SingleOrDefault(r => r.Id == id);
 
             if(room == null)
             {
-                responseData.CreateNotFoundResponse("room", id);
+                 responseData.ThrowNotFoundResponse("room", id);
             }
 
             string authorizedUserId = User.Identity.GetUserId();
@@ -325,8 +324,9 @@ namespace ChatterboxAPI.Controllers
                               select messages;
             var messagesDTO = allMessages.ToList().Select(Mapper.Map<Message, MessageDTO>);
 
-            return responseData.CreateResponse(message: "Only chat member can see chat messages.", status: HttpStatusCode.Unauthorized);
+            return Ok(messagesDTO);
         }
+
         /// <summary>
         /// Get messages added later spesified date.
         /// </summary>
@@ -337,7 +337,7 @@ namespace ChatterboxAPI.Controllers
         [HttpGet, Route("{id:int}/messages/{count:int?}", Name = "GetMessagesFromDate")]
         [ResponseType(typeof(IEnumerable<MessageDTO>))]
         [Authorize]
-        public HttpResponseMessage GetMessagesFromDate(int id, DateTime dateTime, bool count = false)
+        public IHttpActionResult GetMessagesFromDate(int id, DateTime dateTime, bool count = false)
         {
             responseData.RequestHelper = Request;
 
@@ -346,10 +346,11 @@ namespace ChatterboxAPI.Controllers
                 .Where(m => m.Room.Id == id)
                 .Where(m => m.Date >= dateTime).ToList();
             if(count == true)
-                return responseData.CreateResponse(message: messages.Count.ToString(), status: HttpStatusCode.OK);
+                return Ok( messages.Count.ToString());
             else
-                return responseData.CreateResponse(messages: messages.Select(Mapper.Map<Message, MessageDTO>), status: HttpStatusCode.OK);
+                return Ok( messages.Select(Mapper.Map<Message, MessageDTO>));
         }
+
         /// <summary>
         /// Update existing messaged.
         /// </summary>
@@ -388,8 +389,9 @@ namespace ChatterboxAPI.Controllers
 
             msgDTO.Id = message.Id;
 
-            return responseData.CreateResponse(message: "Message was successfuly added.", status: HttpStatusCode.Created);
+            return responseData.CreateResponse(status:HttpStatusCode.Created, id: msgDTO.Id);
         }
+
         /// <summary>
         /// Remove posted message.
         /// </summary>
