@@ -6,7 +6,6 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
-using System.Web.Http.ModelBinding;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -16,20 +15,30 @@ using Microsoft.Owin.Security.OAuth;
 using ChatterboxAPI.Models;
 using ChatterboxAPI.Providers;
 using ChatterboxAPI.Results;
-using System.ServiceModel.Channels;
+using AutoMapper;
+using ChatterboxAPI.App_Start;
+using ChatterboxAPI.DTOs;
+using System.Web.Http.Cors;
 
 
 namespace ChatterboxAPI.Controllers
 {
-      //[Authorize]
+    [Authorize]
     [RoutePrefix("api/Account")]
+ //  [EnableCors(origins: "*", headers: "*", methods: "*")]
     public class AccountController : ApiController
     {
         private const string LocalLoginProvider = "Local";
+        private ApplicationDbContext _context;
+        private ResponseHelper responseData;
+        private ResponseMessage responseMessage;
         private ApplicationUserManager _userManager;
 
         public AccountController()
         {
+            _context = new ApplicationDbContext();
+            responseData = new ResponseHelper();
+            responseMessage = new ResponseMessage();
         }
 
         public AccountController(ApplicationUserManager userManager,
@@ -41,12 +50,10 @@ namespace ChatterboxAPI.Controllers
 
         public ApplicationUserManager UserManager
         {
-            get
-            {
+            get {
                 return _userManager ?? Request.GetOwinContext().GetUserManager<ApplicationUserManager>();
             }
-            private set
-            {
+            private set {
                 _userManager = value;
             }
         }
@@ -54,19 +61,32 @@ namespace ChatterboxAPI.Controllers
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
         // GET api/Account/UserInfo
-      //  [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
         [Route("UserInfo")]
+        [AllowAnonymous]
         public UserInfoViewModel GetUserInfo()
         {
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
-            
-            return new UserInfoViewModel
-            {
+
+            return new UserInfoViewModel {
                 Email = User.Identity.GetUserName(),
                 HasRegistered = externalLogin == null,
                 LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null
             };
         }
+
+
+        /// <summary>
+        /// Login with local account.
+        /// </summary>
+        /// <param name="authorizationDetails"></param>
+        /// <returns></returns>
+        // oAuth endpoint with the same name will be invoked.
+        //[HttpPost, Route("Login")]
+        //public IHttpActionResult Login(AuthorizationDetails authorizationDetails)
+        //{
+        //    return Ok();
+        //}
 
         // POST api/Account/Logout
         [Route("Logout")]
@@ -82,33 +102,30 @@ namespace ChatterboxAPI.Controllers
         {
             IdentityUser user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
 
-            if (user == null)
+            if(user == null)
             {
                 return null;
             }
 
             List<UserLoginInfoViewModel> logins = new List<UserLoginInfoViewModel>();
 
-            foreach (IdentityUserLogin linkedAccount in user.Logins)
+            foreach(IdentityUserLogin linkedAccount in user.Logins)
             {
-                logins.Add(new UserLoginInfoViewModel
-                {
+                logins.Add(new UserLoginInfoViewModel {
                     LoginProvider = linkedAccount.LoginProvider,
                     ProviderKey = linkedAccount.ProviderKey
                 });
             }
 
-            if (user.PasswordHash != null)
+            if(user.PasswordHash != null)
             {
-                logins.Add(new UserLoginInfoViewModel
-                {
+                logins.Add(new UserLoginInfoViewModel {
                     LoginProvider = LocalLoginProvider,
                     ProviderKey = user.UserName,
                 });
             }
 
-            return new ManageInfoViewModel
-            {
+            return new ManageInfoViewModel {
                 LocalLoginProvider = LocalLoginProvider,
                 Email = user.UserName,
                 Logins = logins,
@@ -120,15 +137,15 @@ namespace ChatterboxAPI.Controllers
         [Route("ChangePassword")]
         public async Task<IHttpActionResult> ChangePassword(ChangePasswordBindingModel model)
         {
-            if (!ModelState.IsValid)
+            if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
             IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword,
                 model.NewPassword);
-            
-            if (!result.Succeeded)
+
+            if(!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
@@ -140,14 +157,14 @@ namespace ChatterboxAPI.Controllers
         [Route("SetPassword")]
         public async Task<IHttpActionResult> SetPassword(SetPasswordBindingModel model)
         {
-            if (!ModelState.IsValid)
+            if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
             IdentityResult result = await UserManager.AddPasswordAsync(User.Identity.GetUserId(), model.NewPassword);
 
-            if (!result.Succeeded)
+            if(!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
@@ -156,10 +173,10 @@ namespace ChatterboxAPI.Controllers
         }
 
         // POST api/Account/AddExternalLogin
-        [Route("AddExternalLogin")]
+        [HttpPost, Route("AddExternalLogin")]
         public async Task<IHttpActionResult> AddExternalLogin(AddExternalLoginBindingModel model)
         {
-            if (!ModelState.IsValid)
+            if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -168,7 +185,7 @@ namespace ChatterboxAPI.Controllers
 
             AuthenticationTicket ticket = AccessTokenFormat.Unprotect(model.ExternalAccessToken);
 
-            if (ticket == null || ticket.Identity == null || (ticket.Properties != null
+            if(ticket == null || ticket.Identity == null || (ticket.Properties != null
                 && ticket.Properties.ExpiresUtc.HasValue
                 && ticket.Properties.ExpiresUtc.Value < DateTimeOffset.UtcNow))
             {
@@ -177,7 +194,7 @@ namespace ChatterboxAPI.Controllers
 
             ExternalLoginData externalData = ExternalLoginData.FromIdentity(ticket.Identity);
 
-            if (externalData == null)
+            if(externalData == null)
             {
                 return BadRequest("The external login is already associated with an account.");
             }
@@ -185,7 +202,7 @@ namespace ChatterboxAPI.Controllers
             IdentityResult result = await UserManager.AddLoginAsync(User.Identity.GetUserId(),
                 new UserLoginInfo(externalData.LoginProvider, externalData.ProviderKey));
 
-            if (!result.Succeeded)
+            if(!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
@@ -197,24 +214,23 @@ namespace ChatterboxAPI.Controllers
         [Route("RemoveLogin")]
         public async Task<IHttpActionResult> RemoveLogin(RemoveLoginBindingModel model)
         {
-            if (!ModelState.IsValid)
+            if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
             IdentityResult result;
 
-            if (model.LoginProvider == LocalLoginProvider)
+            if(model.LoginProvider == LocalLoginProvider)
             {
                 result = await UserManager.RemovePasswordAsync(User.Identity.GetUserId());
-            }
-            else
+            } else
             {
                 result = await UserManager.RemoveLoginAsync(User.Identity.GetUserId(),
                     new UserLoginInfo(model.LoginProvider, model.ProviderKey));
             }
 
-            if (!result.Succeeded)
+            if(!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
@@ -222,19 +238,25 @@ namespace ChatterboxAPI.Controllers
             return Ok();
         }
 
+        
         // GET api/Account/ExternalLogin
+        /// <summary>
+        /// Login using external provider (ex: Facebook, Google).
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <param name="error"></param>
+        /// <returns></returns>
         [OverrideAuthentication]
         [HostAuthentication(DefaultAuthenticationTypes.ExternalCookie)]
         [AllowAnonymous]
-        [Route("ExternalLogin", Name = "ExternalLogin")]
+        [HttpGet, Route("ExternalLogin", Name = "ExternalLogin")]
         public async Task<IHttpActionResult> GetExternalLogin(string provider, string error = null)
         {
-            if (error != null)
+            if(error != null)
             {
                 return Redirect(Url.Content("~/") + "#error=" + Uri.EscapeDataString(error));
             }
 
-            //    HttpRequestMessageExtensionMethods.
 
             if(!User.Identity.IsAuthenticated)
             {
@@ -243,12 +265,12 @@ namespace ChatterboxAPI.Controllers
 
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
 
-            if (externalLogin == null)
+            if(externalLogin == null)
             {
                 return InternalServerError();
             }
 
-            if (externalLogin.LoginProvider != provider)
+            if(externalLogin.LoginProvider != provider)
             {
                 Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
                 return new ChallengeResult(provider, this);
@@ -259,19 +281,18 @@ namespace ChatterboxAPI.Controllers
 
             bool hasRegistered = user != null;
 
-            if (hasRegistered)
+            if(hasRegistered)
             {
                 Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-                
-                 ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
-                    OAuthDefaults.AuthenticationType);
+
+                ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
+                   OAuthDefaults.AuthenticationType);
                 ClaimsIdentity cookieIdentity = await user.GenerateUserIdentityAsync(UserManager,
                     CookieAuthenticationDefaults.AuthenticationType);
 
                 AuthenticationProperties properties = ApplicationOAuthProvider.CreateProperties(user.UserName);
                 Authentication.SignIn(properties, oAuthIdentity, cookieIdentity);
-            }
-            else
+            } else
             {
                 IEnumerable<Claim> claims = externalLogin.GetClaims();
                 ClaimsIdentity identity = new ClaimsIdentity(claims, OAuthDefaults.AuthenticationType);
@@ -282,32 +303,35 @@ namespace ChatterboxAPI.Controllers
         }
 
         // GET api/Account/ExternalLogins?returnUrl=%2F&generateState=true
+        /// <summary>
+        /// Get all available providers.
+        /// </summary>
+        /// <param name="returnUrl"></param>
+        /// <param name="generateState">Set "true"</param>
+        /// <returns>List of available providers</returns>
         [AllowAnonymous]
-        [Route("ExternalLogins")]
-        public IEnumerable<ExternalLoginViewModel> GetExternalLogins(string returnUrl, bool generateState = false)
+        [HttpGet, Route("ExternalLogins")]
+        public IEnumerable<ExternalLoginViewModel> GetExternalLogins(string returnUrl = "/", bool generateState = false)
         {
             IEnumerable<AuthenticationDescription> descriptions = Authentication.GetExternalAuthenticationTypes();
             List<ExternalLoginViewModel> logins = new List<ExternalLoginViewModel>();
 
             string state;
 
-            if (generateState)
+            if(generateState)
             {
                 const int strengthInBits = 256;
                 state = RandomOAuthStateGenerator.Generate(strengthInBits);
-            }
-            else
+            } else
             {
                 state = null;
             }
 
-            foreach (AuthenticationDescription description in descriptions)
+            foreach(AuthenticationDescription description in descriptions)
             {
-                ExternalLoginViewModel login = new ExternalLoginViewModel
-                {
+                ExternalLoginViewModel login = new ExternalLoginViewModel {
                     Name = description.Caption,
-                    Url = Url.Route("ExternalLogin", new
-                    {
+                    Url = Url.Route("ExternalLogin", new {
                         provider = description.AuthenticationType,
                         response_type = "token",
                         client_id = Startup.PublicClientId,
@@ -323,20 +347,29 @@ namespace ChatterboxAPI.Controllers
         }
 
         // POST api/Account/Register
+        /// <summary>
+        /// Create local account based on user details
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [AllowAnonymous]
-        [Route("Register")]
+        [HttpPost, Route("Register")]
         public async Task<IHttpActionResult> Register(RegisterBindingModel model)
         {
-            if (!ModelState.IsValid)
+            if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
             var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
 
+            Member newMember = Mapper.Map<RegisterBindingModel, Member>(model);
+            newMember.Account = user;
+
+            _context.Members.Add(newMember);
             IdentityResult result = await UserManager.CreateAsync(user, model.Password);
 
-            if (!result.Succeeded)
+            if(!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
@@ -350,13 +383,13 @@ namespace ChatterboxAPI.Controllers
         [Route("RegisterExternal")]
         public async Task<IHttpActionResult> RegisterExternal(RegisterExternalBindingModel model)
         {
-            if (!ModelState.IsValid)
+            if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
             var info = await Authentication.GetExternalLoginInfoAsync();
-            if (info == null)
+            if(info == null)
             {
                 return InternalServerError();
             }
@@ -364,22 +397,22 @@ namespace ChatterboxAPI.Controllers
             var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user);
-            if (!result.Succeeded)
+            if(!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
 
             result = await UserManager.AddLoginAsync(user.Id, info.Login);
-            if (!result.Succeeded)
+            if(!result.Succeeded)
             {
-                return GetErrorResult(result); 
+                return GetErrorResult(result);
             }
             return Ok();
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && _userManager != null)
+            if(disposing && _userManager != null)
             {
                 _userManager.Dispose();
                 _userManager = null;
@@ -397,22 +430,22 @@ namespace ChatterboxAPI.Controllers
 
         private IHttpActionResult GetErrorResult(IdentityResult result)
         {
-            if (result == null)
+            if(result == null)
             {
                 return InternalServerError();
             }
 
-            if (!result.Succeeded)
+            if(!result.Succeeded)
             {
-                if (result.Errors != null)
+                if(result.Errors != null)
                 {
-                    foreach (string error in result.Errors)
+                    foreach(string error in result.Errors)
                     {
                         ModelState.AddModelError("", error);
                     }
                 }
 
-                if (ModelState.IsValid)
+                if(ModelState.IsValid)
                 {
                     // No ModelState errors are available to send, so just return an empty BadRequest.
                     return BadRequest();
@@ -435,7 +468,7 @@ namespace ChatterboxAPI.Controllers
                 IList<Claim> claims = new List<Claim>();
                 claims.Add(new Claim(ClaimTypes.NameIdentifier, ProviderKey, null, LoginProvider));
 
-                if (UserName != null)
+                if(UserName != null)
                 {
                     claims.Add(new Claim(ClaimTypes.Name, UserName, null, LoginProvider));
                 }
@@ -445,26 +478,25 @@ namespace ChatterboxAPI.Controllers
 
             public static ExternalLoginData FromIdentity(ClaimsIdentity identity)
             {
-                if (identity == null)
+                if(identity == null)
                 {
                     return null;
                 }
 
                 Claim providerKeyClaim = identity.FindFirst(ClaimTypes.NameIdentifier);
 
-                if (providerKeyClaim == null || String.IsNullOrEmpty(providerKeyClaim.Issuer)
+                if(providerKeyClaim == null || String.IsNullOrEmpty(providerKeyClaim.Issuer)
                     || String.IsNullOrEmpty(providerKeyClaim.Value))
                 {
                     return null;
                 }
 
-                if (providerKeyClaim.Issuer == ClaimsIdentity.DefaultIssuer)
+                if(providerKeyClaim.Issuer == ClaimsIdentity.DefaultIssuer)
                 {
                     return null;
                 }
 
-                return new ExternalLoginData
-                {
+                return new ExternalLoginData {
                     LoginProvider = providerKeyClaim.Issuer,
                     ProviderKey = providerKeyClaim.Value,
                     UserName = identity.FindFirstValue(ClaimTypes.Name)
@@ -480,14 +512,14 @@ namespace ChatterboxAPI.Controllers
             {
                 const int bitsPerByte = 8;
 
-                if (strengthInBits % bitsPerByte != 0)
+                if(strengthInBits % bitsPerByte != 0)
                 {
                     throw new ArgumentException("strengthInBits must be evenly divisible by 8.", "strengthInBits");
                 }
 
                 int strengthInBytes = strengthInBits / bitsPerByte;
 
-                byte[] data = new byte[strengthInBytes];
+                byte [] data = new byte [strengthInBytes];
                 _random.GetBytes(data);
                 return HttpServerUtility.UrlTokenEncode(data);
             }

@@ -8,9 +8,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ChatterboxAPI.DTOs
 {
-  //  [ModelName("Author")]
     public class AuthorDTO
-      
     {
         public int Id { set; get; }
         [Required]

@@ -14,7 +14,7 @@ using System.Web.Http.Description;
 namespace ChatterboxAPI.Controllers
 {
     [RoutePrefix("api/members")]
-    [EnableCors(origins: "*", headers: "*", methods: "*")]
+   // [EnableCors(origins: "*", headers: "*", methods: "*")]
 
     public class MembersController : ApiController
     {
@@ -24,7 +24,7 @@ namespace ChatterboxAPI.Controllers
             _context = new ApplicationDbContext();
         }
 
-        private void ThrowNotFoundException(string itemName, int id)
+        public void ThrowNotFoundException(string itemName, int id)
         {
             var resp = new HttpResponseMessage(HttpStatusCode.NotFound) {
                 Content = new StringContent(string.Format("No " + itemName + " with ID = {0}", id)),
@@ -32,13 +32,16 @@ namespace ChatterboxAPI.Controllers
             };
             throw new HttpResponseException(resp);
         }
+
+       
         /// <summary>
         /// Get all users in the system.
         /// </summary>
         /// <returns>List of users in DB.</returns>
-        [HttpGet, Route("",Name = "GetMembers")]
+        [HttpGet, Route("", Name = "GetMembers")]
         [ResponseType(typeof(List<MemberNoRoomDTO>))]
-        public IHttpActionResult GetMembers() {
+        public IHttpActionResult GetMembers()
+        {
             var members = _context.Members.ToList();
 
             return Ok(members.Select(Mapper.Map<Member, MemberNoRoomDTO>));
@@ -55,7 +58,7 @@ namespace ChatterboxAPI.Controllers
 
             if(member == null)
             {
-                ThrowNotFoundException("member", id);
+                //   ThrowNotFoundException("member", id);
             }
 
             return Ok(Mapper.Map<Member, MemberNoRoomDTO>(member));
@@ -66,17 +69,17 @@ namespace ChatterboxAPI.Controllers
         /// <param name="id">User id</param>
         /// <returns>List of rooms.</returns>
         [HttpGet, Route("{id}/rooms", Name = "GetMemberChats")]
-        public IHttpActionResult GetMemberChats(int id)
-        {
-            var member = _context.Members.Include(m=>m.Rooms).SingleOrDefault(m => m.Id == id);
+        //public IHttpActionResult GetMemberChats(int id)
+        //{
+        //    var member = _context.Members.Include(m => m.Rooms).SingleOrDefault(m => m.Id == id);
 
-            if(member == null)
-            {
-                ThrowNotFoundException("member", id);
-            }
+        //    if(member == null)
+        //    {
+        //        ThrowNotFoundException("member", id);
+        //    }
 
-            return Ok(member.Rooms.Select(Mapper.Map<Room, RoomNoMemberDTO>));
-        }
+        //    return Ok(member.Rooms.Select(Mapper.Map<Room, RoomNoMemberDTO>));
+        //}
         /// <summary>
         /// [Temporary solution] Remove user from DB.
         /// </summary>
@@ -89,7 +92,7 @@ namespace ChatterboxAPI.Controllers
 
             if(member == null)
             {
-                ThrowNotFoundException("member", memberId);
+             //   ThrowNotFoundException("member", memberId);
             }
 
             _context.Members.Remove(member);

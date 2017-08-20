@@ -48,6 +48,12 @@ namespace ChatterboxAPI.Models
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
+
+        [StringLength(255)]
+        public string Name { set; get; }
+
+        [Required]
+        public DateTime Birthdate { set; get; }
     }
 
     public class RegisterExternalBindingModel

@@ -17,5 +17,11 @@ namespace ChatterboxAPI.DTOs
         [Required]
         public DateTime Birthdate { set; get; }
         public IEnumerable<RoomNoMemberDTO> Rooms { set; get; }
+
+        public MemberDTO() {
+
+            Rooms = new HashSet<RoomNoMemberDTO>();
+        }
+
     }
 }

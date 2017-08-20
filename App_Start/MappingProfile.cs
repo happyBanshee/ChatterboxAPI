@@ -27,6 +27,9 @@ namespace ChatterboxAPI.App_Start
             Mapper.CreateMap<RoomDTO, Room>().ForMember(r => r.Id, opt => opt.Ignore());
             Mapper.CreateMap<Room, RoomNoMemberDTO>();
             Mapper.CreateMap<RoomNoMemberDTO, Room>().ForMember(r => r.Id, opt => opt.Ignore());
+
+            Mapper.CreateMap<RegisterBindingModel, Member>().ForMember(r => r.Id, opt => opt.Ignore());
+            Mapper.CreateMap<Member, RegisterBindingModel>();
         }
     }
 }

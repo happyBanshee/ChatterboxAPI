@@ -481,6 +481,36 @@
             </summary>
             <param name="documentPath">The physical path to XML document.</param>
         </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.Logout">
+            <summary>
+            Login with local account.
+            </summary>
+            <param name="authorizationDetails"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.GetExternalLogin(System.String,System.String)">
+            <summary>
+            Login using external provider (ex: Facebook, Google).
+            </summary>
+            <param name="provider"></param>
+            <param name="error"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.GetExternalLogins(System.String,System.Boolean)">
+            <summary>
+            Get all available providers.
+            </summary>
+            <param name="returnUrl"></param>
+            <param name="generateState">Set "true"</param>
+            <returns>List of available providers</returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.Register(ChatterboxAPI.Models.RegisterBindingModel)">
+            <summary>
+            Create local account based on user details
+            </summary>
+            <param name="model"></param>
+            <returns></returns>
+        </member>
         <member name="M:ChatterboxAPI.Controllers.MembersController.GetMembers">
             <summary>
             Get all users in the system.
@@ -494,19 +524,18 @@
             <param name="id">User id</param>
             <returns>User details excluding rooms.</returns>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.MembersController.GetMemberChats(System.Int32)">
+        <member name="M:ChatterboxAPI.Controllers.MembersController.DeleteMember(System.Int32)">
             <summary>
             Get all chats the user participates in.
             </summary>
             <param name="id">User id</param>
             <returns>List of rooms.</returns>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.MembersController.DeleteMember(System.Int32)">
+        <member name="M:ChatterboxAPI.Controllers.RoomsController.GetUserRooms">
             <summary>
-            [Temporary solution] Remove user from DB.
+            Get chats for current user.
             </summary>
-            <param name="memberId">USer id</param>
-            <returns>Users amount left.</returns>
+            <returns>List of chat objects.</returns>
         </member>
         <member name="M:ChatterboxAPI.Controllers.RoomsController.GetRooms">
             <summary>
@@ -584,7 +613,7 @@
         </member>
         <member name="M:ChatterboxAPI.Controllers.RoomsController.PostMessage(System.Int32,ChatterboxAPI.DTOs.MessageDTO)">
             <summary>
-            Update existing messaged.
+            Update existing message.
             </summary>
             <param name="id">Chat id.</param>
             <param name="msgDTO">Object type MessageDTO.</param>
@@ -597,6 +626,21 @@
             <param name="id">Chat id.</param>
             <param name="msgId">Message id.</param>
             <returns>Status code 200 OK.</returns>
+        </member>
+        <member name="P:ChatterboxAPI.Models.AuthorizationDetails.Username">
+            <summary>
+            User name used to register.
+            </summary>
+        </member>
+        <member name="P:ChatterboxAPI.Models.AuthorizationDetails.Password">
+            <summary>
+            Password used to register.
+            </summary>
+        </member>
+        <member name="P:ChatterboxAPI.Models.AuthorizationDetails.GrantType">
+            <summary>
+            By default set "grant_type" value "password".
+            </summary>
         </member>
     </members>
 </doc>

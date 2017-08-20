@@ -8,6 +8,7 @@ using System.Web.Optimization;
 using System.Web.Routing;
 using AutoMapper;
 using ChatterboxAPI.App_Start;
+using System.Net;
 
 namespace ChatterboxAPI
 {
@@ -22,5 +23,6 @@ namespace ChatterboxAPI
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
+        
     }
 }

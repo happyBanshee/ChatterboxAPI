@@ -31,6 +31,9 @@ namespace ChatterboxAPI.Providers
         public override async Task
            GrantResourceOwnerCredentials(OAuthGrantResourceOwnerCredentialsContext context)
         {
+            
+         //   context.OwinContext.Response.Headers.Add("Access-Control-Allow-Origin", new [] { "*" });
+
             var userManager = context.OwinContext.GetUserManager<ApplicationUserManager>();
 
             var user = await userManager.FindAsync(context.UserName, context.Password);
@@ -64,11 +67,13 @@ namespace ChatterboxAPI.Providers
 
         public override Task ValidateClientAuthentication(OAuthValidateClientAuthenticationContext context)
         {
+         //   context.OwinContext.Set<string>("as:clientAllowedOrigin", client.AllowedOrigin);
             // Resource owner password credentials does not provide a client ID.
             if(context.ClientId == null)
             {
                 context.Validated();
             }
+            
 
             return Task.FromResult<object>(null);
         }

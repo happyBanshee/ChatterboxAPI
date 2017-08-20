@@ -8,9 +8,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ChatterboxAPI.Models
 {
-    public class Member
+    public class Member//: ApplicationUser
     {
         public int Id { set; get; }
+
+        public virtual  ApplicationUser Account { set; get; }
         [Required]
         [StringLength(255)]
         public string Name { set; get; }

@@ -8,6 +8,7 @@
     <h2>Social logins</h2>
    <p>
        <input type="button" id="btnGoogleLogin" value="Login with Google" class="btn btn-success"/>
+       <input type="button" id="localLogin" value="Login with local account" class="btn btn-warning"/>
    </p>
 </div>
 <div class="row">
@@ -35,6 +36,40 @@
         $("#btnGoogleLogin").on('click', function () {
             window.location.href =
                 "/api/Account/ExternalLogin?provider=Google&response_type=token&client_id=self&redirect_uri=https%3A%2F%2Fwww.superlosos.com%3A44363%2F&state=oTF6qFby6Ak6nc6zuSlJPBNfjbmy92N0ZpSeNz7EiAw1"
+        });
+        $("#localLogin").on('click', function () {
+            debugger;
+            console.log('clicked');
+            //$.post("https://www.superlosos.com:44363/api/account/Login",
+            //    {
+            //       username: "m88902@test.com",
+            //       password: "Password-1",
+            //        "grant-type": password
+            //    },
+            //    function (data, status) {
+            //        alert("Data: " + data + "\nStatus: " + status);
+            //    });
+            var pass = encodeURIComponent("Password-1");
+            var email = encodeURIComponent("m88902@test.com");
+
+            $.ajax({
+                url: 'https://www.superlosos.com:44363/api/account/Login',
+                type: 'post',
+                data: {
+                    username: email,
+                    password: pass,
+                    grant_type: "password"
+                },
+                //"username=" + pass + "&password=" + email + "&grant_type=" + pass,
+                headers: {
+                    "Content-type": "application/x-www-form-urlencoded"
+                },
+                //dataType: 'json',
+                success: function (data) {
+                    console.info(data);
+                }
+            });
+           
         })
     });
 </script>

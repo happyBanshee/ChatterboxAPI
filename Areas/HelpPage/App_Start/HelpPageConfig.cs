@@ -65,6 +65,8 @@ namespace ChatterboxAPI.Areas.HelpPage
             //// and have IEnumerable<string> as the body parameter or return type.
             config.SetSampleForType("[0]=foo&[1]=bar", new MediaTypeHeaderValue("application/x-www-form-urlencoded"), typeof(IEnumerable<string>));
 
+            config.SetSampleForType("{\n\tusername=\"sample string\",\n\tpassword=\"sample string 2\",\n\tgrant_type=\"password\"\n}",
+                new MediaTypeHeaderValue("application/json"), typeof(AuthorizationDetails));
 
             //// Uncomment the following to use "1234" directly as the request sample for media type "text/plain" on the controller named "Values"
             //// and action named "Put".

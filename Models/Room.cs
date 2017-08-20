@@ -16,7 +16,7 @@ namespace ChatterboxAPI.Models
         public string Description { set; get; }
         public bool IsPrivate { get; set; }
         public ICollection<Member> Members { set; get; }
-        public string CreatorId { set; get; }
+        public int MemberId { set; get; }
         public Room()
         {
             Members = new HashSet<Member>();

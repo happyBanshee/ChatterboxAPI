@@ -12,13 +12,13 @@ using ChatterboxAPI.DTOs;
 
 namespace ChatterboxAPI.App_Start
 {
-    public class ResponseMessage
+    public struct ResponseMessage
     {
         public string Message { set; get; }
      //   public int Status { set; get; }
     }
 
-    public class ResponseObject
+    public struct ResponseObject
     {
         //public string Message { set; get; }
            public int Id { set; get; }
@@ -130,7 +130,7 @@ namespace ChatterboxAPI.App_Start
 
         public void ThrowNotFoundResponse(string itemName, string id)
         {
-            var resp = new HttpResponseMessage(HttpStatusCode.NotFound) {
+            var resp = new HttpResponseMessage(HttpStatusCode.BadRequest) {
                 Content = new StringContent(string.Format("No " + itemName + " with ID = {0}", id)),
                 ReasonPhrase = "ID " + itemName + " Not Found"
             };
@@ -138,11 +138,14 @@ namespace ChatterboxAPI.App_Start
         }
         public void ThrowNotFoundResponse(string itemName, int id)
         {
-            var resp = new HttpResponseMessage(HttpStatusCode.NotFound) {
+            var resp = new HttpResponseMessage(HttpStatusCode.BadRequest) {
                 Content = new StringContent(string.Format("No " + itemName + " with ID = {0}", id)),
                 ReasonPhrase = "ID " + itemName + " Not Found"
             };
             throw new HttpResponseException(resp);
+
         }
+       
+
     }
 }

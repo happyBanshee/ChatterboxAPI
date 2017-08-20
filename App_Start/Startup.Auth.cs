@@ -11,6 +11,7 @@ using Owin;
 using ChatterboxAPI.Providers;
 using ChatterboxAPI.Models;
 
+
 namespace ChatterboxAPI
 {
     public partial class Startup
@@ -22,6 +23,7 @@ namespace ChatterboxAPI
         // For more information on configuring authentication, please visit https://go.microsoft.com/fwlink/?LinkId=301864
         public void ConfigureAuth(IAppBuilder app)
         {
+
             // Configure the db context and user manager to use a single instance per request
             app.CreatePerOwinContext(ApplicationDbContext.Create);
             app.CreatePerOwinContext<ApplicationUserManager>(ApplicationUserManager.Create);
@@ -35,7 +37,7 @@ namespace ChatterboxAPI
             PublicClientId = "self";
             OAuthOptions = new OAuthAuthorizationServerOptions
             {
-                TokenEndpointPath = new PathString("/Token"),
+                TokenEndpointPath = new PathString("/api/Account/Login"),
                 Provider = new ApplicationOAuthProvider(PublicClientId),
                 AuthorizeEndpointPath = new PathString("/api/Account/ExternalLogin"),
                 AccessTokenExpireTimeSpan = TimeSpan.FromDays(14),
@@ -63,6 +65,11 @@ namespace ChatterboxAPI
                 ClientId = "987931193471-c8t9ad5s5s46e92cvi5lf0anfmtna5os.apps.googleusercontent.com",
                 ClientSecret = "ckCSc8leh-NhSCmXdZ2cDZo0"
             });
+            //var corsAttr = new EnableCorsAttribute("*", "Content-Type,Authorization", "GET,PUT,POST,DELETE,OPTIONS");
+
+           // app.UseCors(Microsoft.Owin.Cors.CorsOptions.AllowAll);
+
+           
         }
     }
 }

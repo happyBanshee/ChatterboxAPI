@@ -56,6 +56,9 @@
     <Reference Include="Microsoft.Owin, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.3.1.0\lib\net45\Microsoft.Owin.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Owin.Cors, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Cors.3.1.0\lib\net45\Microsoft.Owin.Cors.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Owin.Security, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.3.1.0\lib\net45\Microsoft.Owin.Security.dll</HintPath>
     </Reference>
@@ -257,37 +260,23 @@
     <Compile Include="DTOs\MessageDTO.cs" />
     <Compile Include="DTOs\RoomDTO.cs" />
     <Compile Include="DTOs\RoomNoMemberDTO.cs" />
+    <Compile Include="DTOs\UserDetails.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201707281206435_InitialStructure.cs" />
-    <Compile Include="Migrations\201707281206435_InitialStructure.Designer.cs">
-      <DependentUpon>201707281206435_InitialStructure.cs</DependentUpon>
+    <Compile Include="Migrations\201708142108158_Test.cs" />
+    <Compile Include="Migrations\201708142108158_Test.Designer.cs">
+      <DependentUpon>201708142108158_Test.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201707281230066_SeedMembersRooms.cs" />
-    <Compile Include="Migrations\201707281230066_SeedMembersRooms.Designer.cs">
-      <DependentUpon>201707281230066_SeedMembersRooms.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201707281239046_RemoveExtraFieldsForMessages.cs" />
-    <Compile Include="Migrations\201707281239046_RemoveExtraFieldsForMessages.Designer.cs">
-      <DependentUpon>201707281239046_RemoveExtraFieldsForMessages.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201707281240135_SeedMessagesRoomMembers.cs" />
-    <Compile Include="Migrations\201707281240135_SeedMessagesRoomMembers.Designer.cs">
-      <DependentUpon>201707281240135_SeedMessagesRoomMembers.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201708031344395_updateMessageModel.cs" />
-    <Compile Include="Migrations\201708031344395_updateMessageModel.Designer.cs">
-      <DependentUpon>201708031344395_updateMessageModel.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201708101848550_addCreatorIdToRoomModel.cs" />
-    <Compile Include="Migrations\201708101848550_addCreatorIdToRoomModel.Designer.cs">
-      <DependentUpon>201708101848550_addCreatorIdToRoomModel.cs</DependentUpon>
+    <Compile Include="Migrations\201708151552008_updateRoomModel.cs" />
+    <Compile Include="Migrations\201708151552008_updateRoomModel.Designer.cs">
+      <DependentUpon>201708151552008_updateRoomModel.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\AuthorizationDetails.cs" />
     <Compile Include="Models\Member.cs" />
     <Compile Include="Models\Message.cs" />
     <Compile Include="Models\Room.cs" />
@@ -353,6 +342,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\MemberTest\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
@@ -370,23 +360,11 @@
     <Content Include="Scripts\jquery-1.10.2.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201707281206435_InitialStructure.resx">
-      <DependentUpon>201707281206435_InitialStructure.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201708142108158_Test.resx">
+      <DependentUpon>201708142108158_Test.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201707281230066_SeedMembersRooms.resx">
-      <DependentUpon>201707281230066_SeedMembersRooms.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201707281239046_RemoveExtraFieldsForMessages.resx">
-      <DependentUpon>201707281239046_RemoveExtraFieldsForMessages.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201707281240135_SeedMessagesRoomMembers.resx">
-      <DependentUpon>201707281240135_SeedMessagesRoomMembers.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201708031344395_updateMessageModel.resx">
-      <DependentUpon>201708031344395_updateMessageModel.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201708101848550_addCreatorIdToRoomModel.resx">
-      <DependentUpon>201708101848550_addCreatorIdToRoomModel.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201708151552008_updateRoomModel.resx">
+      <DependentUpon>201708151552008_updateRoomModel.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
