@@ -136,8 +136,11 @@ namespace ChatterboxAPI.App_Start
             };
             throw new HttpResponseException(resp);
         }
+
         public void ThrowNotFoundResponse(string itemName, int id)
         {
+            
+
             var resp = new HttpResponseMessage(HttpStatusCode.BadRequest) {
                 Content = new StringContent(string.Format("No " + itemName + " with ID = {0}", id)),
                 ReasonPhrase = "ID " + itemName + " Not Found"
@@ -145,7 +148,19 @@ namespace ChatterboxAPI.App_Start
             throw new HttpResponseException(resp);
 
         }
-       
+
+        //public void ThrowCustomResponse(HttpStatusCode status, string message)
+        //{
+
+            
+
+        //    var resp = new HttpResponseMessage(status) {
+        //        Content = new StringContent(message),
+        //        ReasonPhrase = message
+        //    };
+        //    throw new RequestHelper.CreateErrorResponse(status, message);
+        //}
+
 
     }
 }

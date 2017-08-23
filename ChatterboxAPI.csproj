@@ -258,6 +258,7 @@
     <Compile Include="DTOs\MemberDTO.cs" />
     <Compile Include="DTOs\MemberNoRoomDTO.cs" />
     <Compile Include="DTOs\MessageDTO.cs" />
+    <Compile Include="DTOs\MessageNoAuthorDTO.cs" />
     <Compile Include="DTOs\RoomDTO.cs" />
     <Compile Include="DTOs\RoomNoMemberDTO.cs" />
     <Compile Include="DTOs\UserDetails.cs" />
@@ -271,6 +272,10 @@
     <Compile Include="Migrations\201708151552008_updateRoomModel.cs" />
     <Compile Include="Migrations\201708151552008_updateRoomModel.Designer.cs">
       <DependentUpon>201708151552008_updateRoomModel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201708211310405_updateBirthdateType.cs" />
+    <Compile Include="Migrations\201708211310405_updateBirthdateType.Designer.cs">
+      <DependentUpon>201708211310405_updateBirthdateType.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
@@ -365,6 +370,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201708151552008_updateRoomModel.resx">
       <DependentUpon>201708151552008_updateRoomModel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708211310405_updateBirthdateType.resx">
+      <DependentUpon>201708211310405_updateBirthdateType.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

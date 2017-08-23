@@ -481,11 +481,59 @@
             </summary>
             <param name="documentPath">The physical path to XML document.</param>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.AccountController.Logout">
+        <member name="M:ChatterboxAPI.Controllers.AccountController.GetUserInfo">
+            <summary>
+            Get user info.
+            </summary>
+            <returns>User data.</returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.Login(ChatterboxAPI.Models.AuthorizationDetails)">
             <summary>
             Login with local account.
             </summary>
             <param name="authorizationDetails"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.Logout">
+            <summary>
+            Logout.
+            </summary>
+            <returns>Status 200</returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.GetManageInfo(System.String,System.Boolean)">
+            <summary>
+            Get manage info. 
+            </summary>
+            <param name="returnUrl"></param>
+            <param name="generateState"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.ChangePassword(ChatterboxAPI.Models.ChangePasswordBindingModel)">
+            <summary>
+            Change current user's password
+            </summary>
+            <param name="model"></param>
+            <returns>Status 200.</returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.SetPassword(ChatterboxAPI.Models.SetPasswordBindingModel)">
+            <summary>
+            Set password
+            </summary>
+            <param name="model"></param>
+            <returns>Status 200.</returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.AddExternalLogin(ChatterboxAPI.Models.AddExternalLoginBindingModel)">
+            <summary>
+            [TO BE CHECKED]
+            </summary>
+            <param name="model"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ChatterboxAPI.Controllers.AccountController.RemoveLogin(ChatterboxAPI.Models.RemoveLoginBindingModel)">
+            <summary>
+            [TO BE CHECKED]
+            </summary>
+            <param name="model"></param>
             <returns></returns>
         </member>
         <member name="M:ChatterboxAPI.Controllers.AccountController.GetExternalLogin(System.String,System.String)">
@@ -543,16 +591,16 @@
             </summary>
             <returns>List of chat objects.</returns>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.RoomsController.GetRoom(System.Int32)">
+        <member name="M:ChatterboxAPI.Controllers.RoomsController.GetRoomData(System.Int32)">
             <summary>
             Get chat.
             </summary>
             <param name="id">Chat id.</param>
             <returns>Chat object.</returns>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.RoomsController.UpdateRoom(System.Int32,ChatterboxAPI.DTOs.RoomDTO)">
+        <member name="M:ChatterboxAPI.Controllers.RoomsController.UpdateRoom(System.Int32,ChatterboxAPI.DTOs.RoomNoMemberDTO)">
             <summary>
-            Update chat data.
+            Update chat data (name/description).
             </summary>
             <param name="id">Chat id.</param>
             <param name="roomDTO">New data.</param>
@@ -560,7 +608,7 @@
         </member>
         <member name="M:ChatterboxAPI.Controllers.RoomsController.DeleteRoom(System.Int32)">
             <summary>
-            Remove chat from DB.
+            Delete chat.
             </summary>
             <param name="id">Chat id.</param>
             <returns>Status code 200 OK.</returns>
@@ -579,20 +627,18 @@
             <param name="id">Chat id.</param>
             <returns>List of object type MemberNoRoomDTO.</returns>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.RoomsController.AddMemberToRoom(System.Int32,System.Int32)">
+        <member name="M:ChatterboxAPI.Controllers.RoomsController.AddMemberToRoom(System.Int32)">
             <summary>
-            Add user to chat.
+            Join the chat.
             </summary>
             <param name="roomId">Chat id.</param>
-            <param name="memberId">User Id.</param>
             <returns>Status code 200 OK.</returns>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.RoomsController.DeleteMemberFromRoom(System.Int32,System.Int32)">
+        <member name="M:ChatterboxAPI.Controllers.RoomsController.LeaveRoom(System.Int32)">
             <summary>
-            Remove user from chat.
+            Leave the chat.
             </summary>
             <param name="roomId">Chat id.</param>
-            <param name="memberId">User id.</param>
             <returns>Status code 200 OK.</returns>
         </member>
         <member name="M:ChatterboxAPI.Controllers.RoomsController.GetRoomMessages(System.Int32)">
@@ -611,9 +657,9 @@
             <param name="count">Return messages count.</param>
             <returns>List of objects type MessageDTO. Returns messages count if "count" flag is TRUE.</returns>
         </member>
-        <member name="M:ChatterboxAPI.Controllers.RoomsController.PostMessage(System.Int32,ChatterboxAPI.DTOs.MessageDTO)">
+        <member name="M:ChatterboxAPI.Controllers.RoomsController.PostMessage(System.Int32,ChatterboxAPI.DTOs.MessageNoAuthorDTO)">
             <summary>
-            Update existing message.
+            Post message.
             </summary>
             <param name="id">Chat id.</param>
             <param name="msgDTO">Object type MessageDTO.</param>
@@ -621,7 +667,7 @@
         </member>
         <member name="M:ChatterboxAPI.Controllers.RoomsController.DeleteMessage(System.Int32,System.Int32)">
             <summary>
-            Remove posted message.
+            Delete message.
             </summary>
             <param name="id">Chat id.</param>
             <param name="msgId">Message id.</param>

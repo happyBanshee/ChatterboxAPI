@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Http.Results;
 using System.Web.Http.Description;
 using ChatterboxAPI.Models;
 using ChatterboxAPI.DTOs;
@@ -18,7 +19,6 @@ namespace ChatterboxAPI.Controllers
 {
     [RoutePrefix("api/rooms")]
     [Authorize]
-  //  [EnableCors(origins: "*", headers: "*", methods: "*")]
     public class RoomsController : ApiController
     {
         private ApplicationDbContext _context;
@@ -66,10 +66,10 @@ namespace ChatterboxAPI.Controllers
 
             return links;
         }
-
+        [NonAction]
         private Member GetMemberBasedOnUserId()
         {
-               responseData.RequestHelper = Request;
+            responseData.RequestHelper = Request;
 
             string authorizedAccountId = User.Identity.GetUserId();
             Member authorizedMember = _context.Members.SingleOrDefault(m => m.Account.Id == authorizedAccountId);
@@ -81,19 +81,19 @@ namespace ChatterboxAPI.Controllers
 
             return authorizedMember;
         }
-       
+
         /// <summary>
         /// Get chats for current user.
         /// </summary>
         /// <returns>List of chat objects.</returns>
         [HttpGet, Route("")]
-        [Authorize]
         [ResponseType(typeof(IEnumerable<RoomNoMemberDTO>))]
         public IHttpActionResult GetUserRooms()
         {
+            responseData.RequestHelper = Request;
             Member authorizedMember = GetMemberBasedOnUserId();
 
-            var roomCollection = _context.Rooms.Where(r => r.Members.Contains(authorizedMember));//     Select(m=>m.Id==authorizedMember.Id));
+            var roomCollection = _context.Rooms.Where(r => r.Members.Contains(authorizedMember));
             var roomDtoCollection = _context.Rooms.ToList().Select(Mapper.Map<Room, RoomNoMemberDTO>);
 
             return Ok(roomDtoCollection);
@@ -103,19 +103,14 @@ namespace ChatterboxAPI.Controllers
         /// </summary>
         /// <returns>List of chat objects.</returns>
         [HttpGet, Route("all")]
-        [Authorize]
         [ResponseType(typeof(IEnumerable<RoomNoMemberDTO>))]
         public IHttpActionResult GetRooms()
         {
             var roomCollection = _context.Rooms.ToList();
             var roomDtoCollection = _context.Rooms.ToList().Select(Mapper.Map<Room, RoomNoMemberDTO>);
 
-            responseData.RequestHelper = Request;
-
             return Ok(roomDtoCollection);
         }
-
-
 
         /// <summary>
         /// Get chat.
@@ -123,62 +118,78 @@ namespace ChatterboxAPI.Controllers
         /// <param name="id">Chat id.</param>
         /// <returns>Chat object.</returns>
         [HttpGet, Route("{id:int}")]
-        [Authorize]
         [ResponseType(typeof(RoomDTO))]
-        public IHttpActionResult GetRoom(int id)
+        public IHttpActionResult GetRoomData(int id)
         {
             responseData.RequestHelper = Request;
-            //TODO: authorization
 
             Room room = _context.Rooms.SingleOrDefault(r => r.Id == id);
+            Member member = GetMemberBasedOnUserId();
 
             if(room == null)
             {
-                responseData.ThrowNotFoundResponse("room", id);
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse("room", id));
             }
 
-            RoomDTO roomDTO = Mapper.Map<Room, RoomDTO>(room);
+            bool authorizedUserHasAccess = !room.IsPrivate || room.Members.Select(m => m.Id == member.Id).ToList().Count() != 0;
+            if(!authorizedUserHasAccess)
+            {
+                return new ResponseMessageResult(responseData.CreateResponse(status: HttpStatusCode.Forbidden, message: "Only members can access private chat."));
+            }
+
+            RoomNoMemberDTO roomDTO = Mapper.Map<Room, RoomNoMemberDTO>(room);
 
             return Ok(roomDTO);
         }
         /// <summary>
-        /// Update chat data.
+        /// Update chat data (name/description).
         /// </summary>
         /// <param name="id">Chat id.</param>
         /// <param name="roomDTO">New data.</param>
         /// <returns></returns>
         [HttpPut, Route("{id}", Name = "UpdateRoom")]
-        [Authorize]
-        public HttpResponseMessage UpdateRoom(int id, [FromBody]RoomDTO roomDTO)
+        [ResponseType(typeof(RoomNoMemberDTO))]
+        public IHttpActionResult UpdateRoom(int id, [FromBody]RoomNoMemberDTO roomDTO)
         {
             responseData.RequestHelper = Request;
+
             if(!ModelState.IsValid)
             {
-                return responseData.CreateNotValidResponse(modelState: ModelState);
+                return new ResponseMessageResult(responseData.CreateNotValidResponse(modelState: ModelState));
             }
-
-            //TODO: authorization
 
             Room room = _context.Rooms.SingleOrDefault(r => r.Id == id);
 
             if(room == null)
             {
-                return responseData.CreateNotFoundResponse("room", id);
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse("room", id));
             }
 
-            var updatedRoom = Mapper.Map<RoomDTO, Room>(roomDTO, room);
+            Member member = GetMemberBasedOnUserId();
+
+            bool isRoomCreator = room.MemberId == member.Id;
+
+            if(!isRoomCreator)
+            {
+                return new ResponseMessageResult(responseData.CreateResponse(
+                    message: "Only room creator can update room data.",
+                    status: HttpStatusCode.Forbidden));
+            }
+
+            var updatedRoom = Mapper.Map<RoomNoMemberDTO, Room>(roomDTO, room);
             _context.SaveChanges();
 
-            return responseData.CreateResponse(status: HttpStatusCode.OK, message: "Chat data was successfully updated");
+            return Ok(Mapper.Map<Room, RoomNoMemberDTO>(room));
         }
 
         /// <summary>
-        /// Remove chat from DB.
+        /// Delete chat.
         /// </summary>
         /// <param name="id">Chat id.</param>
         /// <returns>Status code 200 OK.</returns>
         [HttpDelete, Route("{id}", Name = "DeleteRoom")]
-        public HttpResponseMessage DeleteRoom(int id)
+        [ResponseType(typeof(ResponseMessageResult))]
+        public IHttpActionResult DeleteRoom(int id)
         {
             responseData.RequestHelper = Request;
             Room room = _context.Rooms.SingleOrDefault(r => r.Id == id);
@@ -188,20 +199,29 @@ namespace ChatterboxAPI.Controllers
                 responseData.CreateNotFoundResponse("room", id);
             }
 
-            //TODO: authorization
+            Member member = GetMemberBasedOnUserId();
+
+            bool isRoomCreator = room.MemberId == member.Id;
+
+            if(!isRoomCreator)
+            {
+                return new ResponseMessageResult(responseData.CreateResponse(
+                    message: "Only room creator can delete a room.",
+                    status: HttpStatusCode.Forbidden));
+            }
 
             _context.Rooms.Remove(room);
             _context.SaveChanges();
 
-            return responseData.CreateResponse(status: HttpStatusCode.OK, message: "Room with ID " + id + " was removed.");
+            return new ResponseMessageResult(responseData.CreateResponse(status: HttpStatusCode.OK, message: "Room with ID " + id + " was succesfully deleted."));
         }
+
         /// <summary>
         /// Add new chat.
         /// </summary>
         /// <param name="roomDTO">Object type RoomDTO.</param>
         /// <returns>Status code 201 Created.</returns>
         [HttpPost, Route("~/api/room", Name = "CreateRoom")]
-        [Authorize]
         [ResponseType(typeof(RoomDTO))]
         public HttpResponseMessage CreateRoom(RoomDTO roomDTO)
         {
@@ -218,7 +238,7 @@ namespace ChatterboxAPI.Controllers
 
             if(authorizedMember == null)
             {
-                responseData.ThrowNotFoundResponse("member",authorizedAccountId);
+                responseData.ThrowNotFoundResponse("member", authorizedAccountId);
             }
 
             roomDTO.MemberId = authorizedMember.Id;
@@ -249,7 +269,15 @@ namespace ChatterboxAPI.Controllers
 
             if(room == null)
             {
-                responseData.ThrowNotFoundResponse("room", id);
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse("room", id));
+            }
+
+            Member member = GetMemberBasedOnUserId();
+            bool isRoomMember = room.Members.SingleOrDefault(m => m.Id == member.Id) != null;
+
+            if(!isRoomMember)
+            {
+                return new ResponseMessageResult(responseData.CreateResponse(message: "Only chat members can see chat data.", status: HttpStatusCode.Forbidden));
             }
 
             var allmembers = from members in _context.Members
@@ -262,79 +290,76 @@ namespace ChatterboxAPI.Controllers
         }
 
         /// <summary>
-        /// Add user to chat.
+        /// Join the chat.
         /// </summary>
         /// <param name="roomId">Chat id.</param>
-        /// <param name="memberId">User Id.</param>
         /// <returns>Status code 200 OK.</returns>
-        [HttpPut, Route("{roomId:int}/members/{memberId:int}", Name = "AddMemberToRoom")]
+        [HttpPut, Route("{roomId:int}/member", Name = "AddMemberToRoom")]
         [ResponseType(typeof(string))]
-        public HttpResponseMessage AddMemberToRoom(int roomId, int memberId)
+        public IHttpActionResult AddMemberToRoom(int roomId)
         {
-            Member authorizedMember = GetMemberBasedOnUserId();
-
             responseData.RequestHelper = Request;
 
-            var room = _context.Rooms.Include(r => r.Members).SingleOrDefault(r => r.Id == roomId);
+            Member authorizedMember = GetMemberBasedOnUserId();
+            Room room = _context.Rooms.Include(r => r.Members).SingleOrDefault(r => r.Id == roomId);
 
             if(room == null)
             {
-                return responseData.CreateNotFoundResponse("room", roomId);
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse("room", roomId));
             }
 
-            var member = _context.Members.Include(r => r.Rooms).SingleOrDefault(m => m.Id == memberId);
-
-            if(member == null)
+            bool isAlreadyRoomMember = room.Members.Where(m => m.Id == authorizedMember.Id).ToList().Count() > 0;
+            if(isAlreadyRoomMember)
             {
-                 responseData.ThrowNotFoundResponse("member", memberId);
+                return new ResponseMessageResult(responseData.CreateResponse(
+                    //  message: "Room ID " + roomId + " already has member ID " + authorizedMember.Id + ".",
+                    message: "Member with ID " + authorizedMember.Id + " has already joinув the chat.",
+
+                    status: HttpStatusCode.BadRequest));
             }
 
-            var memberInRoom = room.Members.Where(m => m.Id == memberId).ToList();
-            if(memberInRoom.Count() > 0)
-            {
-                return responseData.CreateResponse(message: "Room ID " + roomId + " already has member ID " + memberId, status: HttpStatusCode.BadRequest);
-            }
-
-            room.Members.Add(member);
+            room.Members.Add(authorizedMember);
             _context.SaveChanges();
 
-            return responseData.CreateResponse(message: "Member with ID " + memberId + " was successfully added to the chat with ID " + roomId, status: HttpStatusCode.OK);
+            return new ResponseMessageResult(responseData.CreateResponse(
+                message: "Member with ID " + authorizedMember.Id + " was successfully added to the chat with ID " + roomId + ".",
+                status: HttpStatusCode.OK));
         }
+
         /// <summary>
-        /// Remove user from chat.
+        /// Leave the chat.
         /// </summary>
         /// <param name="roomId">Chat id.</param>
-        /// <param name="memberId">User id.</param>
         /// <returns>Status code 200 OK.</returns>
-        [HttpDelete, Route("{id:int}/members/{memberId:int}", Name = "DeleteMemberFromRoom")]
-        [Authorize]
-        public HttpResponseMessage DeleteMemberFromRoom(int roomId, int memberId)
+        [HttpDelete, Route("{id:int}/member", Name = "LeaveRoom")]
+        [ResponseType(typeof(string))]
+        public IHttpActionResult LeaveRoom(int roomId)
         {
             responseData.RequestHelper = Request;
             Room room = _context.Rooms.Include(r => r.Members).SingleOrDefault(r => r.Id == roomId);
             if(room == null)
             {
-                return responseData.CreateNotFoundResponse(itemName: "room", id: roomId);
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse(
+                    itemName: "room",
+                    id: roomId));
             }
 
-            string authorizedUserId = User.Identity.GetUserId();
-            int roomCreatorId = room.MemberId;
+            Member member = GetMemberBasedOnUserId();
+            bool isRoomMember = room.Members.SingleOrDefault(m => m.Id == member.Id) != null;
 
-            //if(authorizedUserId != roomCreatorId)
-            //{
-            //    return responseData.CreateResponse(message: "Only chat creator can remove users.", status: HttpStatusCode.Unauthorized);
-            //}
-
-            Member member = _context.Members.Include(r => r.Rooms).SingleOrDefault(m => m.Id == memberId);
-
-            if(member == null)
+            if(!isRoomMember)
             {
-                return responseData.CreateNotFoundResponse("member", roomId);
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse(
+                    itemName: "member",
+                    id: roomId));
             }
+
             room.Members.Remove(member);
             _context.SaveChanges();
 
-            return responseData.CreateResponse(message: "User with ID " + memberId + " was successfully removed from the chat.", status: HttpStatusCode.OK);
+            return new ResponseMessageResult(responseData.CreateResponse(
+                message: "User was successfully removed from the chat.",
+                status: HttpStatusCode.OK));
         }
 
         /// <summary>
@@ -343,7 +368,6 @@ namespace ChatterboxAPI.Controllers
         /// <param name="id">Chat id.</param>
         /// <returns>List of objects type MessageDTO.</returns>
         [HttpGet, Route("{id:int}/messages", Name = "GetRoomMessages")]
-        [Authorize]
         [ResponseType(typeof(IEnumerable<MessageDTO>))]
         public IHttpActionResult GetRoomMessages(int id)
         {
@@ -352,21 +376,25 @@ namespace ChatterboxAPI.Controllers
 
             if(room == null)
             {
-                 responseData.ThrowNotFoundResponse("room", id);
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse("room", id));
             }
 
-            string authorizedUserId = User.Identity.GetUserId();
-            //Member chatMember = room.Members.SingleOrDefault(m => m.Id == authorizedUserId);
+            Member member = GetMemberBasedOnUserId();
+            bool isChatMember = room.Members.SingleOrDefault(m => m.Id == member.Id) != null;
 
-            //if(chatMember == null)
-            //{
-            //    return responseData.CreateResponse(message: "Only chat member can see chat messages.", status: HttpStatusCode.Unauthorized);
-            //    //ThrowUnauthorizedException();
-            //}
+
+            if(!isChatMember)
+            {
+                return new ResponseMessageResult(responseData.CreateResponse(
+                    message: "Only chat member can see this data.",
+                    status: HttpStatusCode.Unauthorized)
+                    );
+            }
 
             var allMessages = from messages in _context.Messages.Include(m => m.Author)
                               where messages.Room.Id == id
                               select messages;
+
             var messagesDTO = allMessages.ToList().Select(Mapper.Map<Message, MessageDTO>);
 
             return Ok(messagesDTO);
@@ -381,52 +409,81 @@ namespace ChatterboxAPI.Controllers
         /// <returns>List of objects type MessageDTO. Returns messages count if "count" flag is TRUE.</returns>
         [HttpGet, Route("{id:int}/messages/{count:int?}", Name = "GetMessagesFromDate")]
         [ResponseType(typeof(IEnumerable<MessageDTO>))]
-        [Authorize]
         public IHttpActionResult GetMessagesFromDate(int id, DateTime dateTime, bool count = false)
         {
             responseData.RequestHelper = Request;
+            Room room = _context.Rooms.Include(r => r.Members).SingleOrDefault(r => r.Id == id);
+
+            if(room == null)
+            {
+                return new ResponseMessageResult(responseData.CreateNotFoundResponse("room", id));
+            }
+
+            Member member = GetMemberBasedOnUserId();
+            bool isChatMember = room.Members.SingleOrDefault(m => m.Id == member.Id) != null;
+
+            if(!isChatMember)
+            {
+                return new ResponseMessageResult(responseData.CreateResponse(
+                    message: "Only chat member can see this data.",
+                    status: HttpStatusCode.Unauthorized)
+                    );
+            }
 
             var messages =
                 _context.Messages.Include(m => m.Author)
                 .Where(m => m.Room.Id == id)
                 .Where(m => m.Date >= dateTime).ToList();
+
             if(count == true)
-                return Ok( messages.Count.ToString());
+                return new ResponseMessageResult(responseData.CreateResponse(message: messages.Count.ToString(), status: HttpStatusCode.OK));
             else
-                return Ok( messages.Select(Mapper.Map<Message, MessageDTO>));
+                return Ok(messages.Select(Mapper.Map<Message, MessageDTO>));
         }
 
         /// <summary>
-        /// Update existing message.
+        /// Post message.
         /// </summary>
         /// <param name="id">Chat id.</param>
         /// <param name="msgDTO">Object type MessageDTO.</param>
         /// <returns></returns>
         [HttpPost, Route("{id:int}/messages", Name = "PostMessage")]
-        [Authorize]
-        public HttpResponseMessage PostMessage(int id, MessageDTO msgDTO)
+        [ResponseType(typeof(ResponseMessageResult))]
+        public IHttpActionResult PostMessage(int id, MessageNoAuthorDTO msgDTO)
         {
             responseData.RequestHelper = Request;
 
-            if(!ModelState.IsValid)
-            {
-                return responseData.CreateNotValidResponse(modelState: ModelState);
-            }
-
-            Member author = _context.Members.SingleOrDefault(m => m.Id == msgDTO.Author.Id);
+            Member authorizedMember = GetMemberBasedOnUserId();
             Room room = _context.Rooms.SingleOrDefault(r => r.Id == id);
-            Message message = Mapper.Map<MessageDTO, Message>(msgDTO);
 
-            if(author == null)
-            {
-                responseData.ThrowNotFoundResponse(itemName: "author", id: msgDTO.Author.Id);
-            }
             if(room == null)
             {
-                responseData.CreateNotFoundResponse(itemName: "room", id: id);
+                return new ResponseMessageResult(
+                responseData.CreateNotFoundResponse(
+                    itemName: "room",
+                    id: id));
             }
 
-            message.Author = author;
+            bool isChatMember = room.Members.SingleOrDefault(m => m.Id == authorizedMember.Id) != null;
+
+            if(!isChatMember)
+            {
+                return new ResponseMessageResult(
+                responseData.CreateResponse(
+                    message: "Only chat member can access this data.",
+                    status: HttpStatusCode.Forbidden));
+            }
+
+            Message message = Mapper.Map<MessageNoAuthorDTO, Message>(msgDTO);
+
+            message.AuthorId = authorizedMember.Id;
+
+            if(!ModelState.IsValid)
+            {
+                return new ResponseMessageResult(
+                    responseData.CreateNotValidResponse(modelState: ModelState));
+            }
+
             message.Room = room;
 
             _context.Messages.Add(message);
@@ -434,33 +491,69 @@ namespace ChatterboxAPI.Controllers
 
             msgDTO.Id = message.Id;
 
-            return responseData.CreateResponse(status:HttpStatusCode.Created, id: msgDTO.Id);
+            return new ResponseMessageResult(
+                responseData.CreateResponse(
+                    status: HttpStatusCode.Created, id:
+                    msgDTO.Id));
         }
 
         /// <summary>
-        /// Remove posted message.
+        /// Delete message.
         /// </summary>
         /// <param name="id">Chat id.</param>
         /// <param name="msgId">Message id.</param>
         /// <returns>Status code 200 OK.</returns>
-
         [HttpDelete, Route("{id:int}/messages", Name = "DeleteMessage")]
-        [Authorize]
-        public HttpResponseMessage DeleteMessage(int id, int msgId)
+        public IHttpActionResult DeleteMessage(int id, int msgId)
         {
             responseData.RequestHelper = Request;
+            Member authorizedMember = GetMemberBasedOnUserId();
+            Room room = _context.Rooms.SingleOrDefault(r => r.Id == id);
+
+            if(room == null)
+            {
+                return new ResponseMessageResult(
+                responseData.CreateNotFoundResponse(
+                    itemName: "room",
+                    id: id));
+            }
+
+            bool isChatMember = room.Members.SingleOrDefault(m => m.Id == authorizedMember.Id) != null;
+
+            if(!isChatMember)
+            {
+                return new ResponseMessageResult(
+                responseData.CreateResponse(
+                    message: "Only chat member can access this data.",
+                    status: HttpStatusCode.Forbidden));
+            }
 
             Message msg = _context.Messages.Where(m => m.Room.Id == id).SingleOrDefault(m => m.Id == msgId);
 
             if(msg == null)
             {
-            return    responseData.CreateNotFoundResponse("message", id);
+                return new ResponseMessageResult(
+                    responseData.CreateNotFoundResponse(
+                        itemName: "message",
+                        id: id));
+            }
+
+            bool isMessageAuthor = msg.AuthorId == authorizedMember.Id;
+            if(!isMessageAuthor)
+            {
+                return new ResponseMessageResult(
+                responseData.CreateResponse(
+                    message: "Message was created by another member.",
+                    status: HttpStatusCode.Forbidden));
             }
 
             _context.Messages.Remove(msg);
             _context.SaveChanges();
 
-            return responseData.CreateResponse(message: "Message was successfully deleted.", status: HttpStatusCode.OK);
+            return new ResponseMessageResult(
+                responseData.CreateResponse(
+                    message: "Message was successfully deleted.",
+                    status: HttpStatusCode.OK));
         }
     }
 }

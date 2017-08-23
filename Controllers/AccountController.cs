@@ -19,13 +19,12 @@ using AutoMapper;
 using ChatterboxAPI.App_Start;
 using ChatterboxAPI.DTOs;
 using System.Web.Http.Cors;
-
+using System.Linq;
 
 namespace ChatterboxAPI.Controllers
 {
     [Authorize]
     [RoutePrefix("api/Account")]
- //  [EnableCors(origins: "*", headers: "*", methods: "*")]
     public class AccountController : ApiController
     {
         private const string LocalLoginProvider = "Local";
@@ -61,20 +60,28 @@ namespace ChatterboxAPI.Controllers
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
         // GET api/Account/UserInfo
+        /// <summary>
+        /// Get user info.
+        /// </summary>
+        /// <returns>User data.</returns>
         [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
         [Route("UserInfo")]
-        [AllowAnonymous]
         public UserInfoViewModel GetUserInfo()
         {
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
 
+            string userId = User.Identity.GetUserId();
+            Member member = _context.Members
+                .SingleOrDefault(m => m.Account.Id == userId);
+
             return new UserInfoViewModel {
+                Name = member.Name,
+                Birthdate = member.Birthdate,
                 Email = User.Identity.GetUserName(),
                 HasRegistered = externalLogin == null,
-                LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null
+                LoginProvider = externalLogin != null ? externalLogin.LoginProvider : "Local"
             };
         }
-
 
         /// <summary>
         /// Login with local account.
@@ -82,13 +89,18 @@ namespace ChatterboxAPI.Controllers
         /// <param name="authorizationDetails"></param>
         /// <returns></returns>
         // oAuth endpoint with the same name will be invoked.
-        //[HttpPost, Route("Login")]
-        //public IHttpActionResult Login(AuthorizationDetails authorizationDetails)
-        //{
-        //    return Ok();
-        //}
+        [HttpPost, Route("Login")]
+        [AllowAnonymous]
+        public IHttpActionResult Login(AuthorizationDetails authorizationDetails)
+        {
+            return Ok();
+        }
 
         // POST api/Account/Logout
+        /// <summary>
+        /// Logout.
+        /// </summary>
+        /// <returns>Status 200</returns>
         [Route("Logout")]
         public IHttpActionResult Logout()
         {
@@ -97,8 +109,14 @@ namespace ChatterboxAPI.Controllers
         }
 
         // GET api/Account/ManageInfo?returnUrl=%2F&generateState=true
+        /// <summary>
+        /// Get manage info. 
+        /// </summary>
+        /// <param name="returnUrl"></param>
+        /// <param name="generateState"></param>
+        /// <returns></returns>
         [Route("ManageInfo")]
-        public async Task<ManageInfoViewModel> GetManageInfo(string returnUrl, bool generateState = false)
+        public async Task<ManageInfoViewModel> GetManageInfo(string returnUrl = "/", bool generateState = false)
         {
             IdentityUser user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
 
@@ -134,6 +152,11 @@ namespace ChatterboxAPI.Controllers
         }
 
         // POST api/Account/ChangePassword
+        /// <summary>
+        /// Change current user's password
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Status 200.</returns>
         [Route("ChangePassword")]
         public async Task<IHttpActionResult> ChangePassword(ChangePasswordBindingModel model)
         {
@@ -154,6 +177,11 @@ namespace ChatterboxAPI.Controllers
         }
 
         // POST api/Account/SetPassword
+        /// <summary>
+        /// Set password
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Status 200.</returns>
         [Route("SetPassword")]
         public async Task<IHttpActionResult> SetPassword(SetPasswordBindingModel model)
         {
@@ -173,6 +201,11 @@ namespace ChatterboxAPI.Controllers
         }
 
         // POST api/Account/AddExternalLogin
+        /// <summary>
+        /// [TO BE CHECKED]
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [HttpPost, Route("AddExternalLogin")]
         public async Task<IHttpActionResult> AddExternalLogin(AddExternalLoginBindingModel model)
         {
@@ -211,6 +244,11 @@ namespace ChatterboxAPI.Controllers
         }
 
         // POST api/Account/RemoveLogin
+        /// <summary>
+        /// [TO BE CHECKED]
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [Route("RemoveLogin")]
         public async Task<IHttpActionResult> RemoveLogin(RemoveLoginBindingModel model)
         {

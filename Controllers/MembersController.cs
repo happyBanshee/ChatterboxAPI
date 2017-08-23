@@ -14,8 +14,6 @@ using System.Web.Http.Description;
 namespace ChatterboxAPI.Controllers
 {
     [RoutePrefix("api/members")]
-   // [EnableCors(origins: "*", headers: "*", methods: "*")]
-
     public class MembersController : ApiController
     {
         private ApplicationDbContext _context;

@@ -41,6 +41,11 @@ namespace ChatterboxAPI.Models
             .HasOptional(m => m.Member)
             .WithRequired(m => m.Account)
             .Map(p => p.MapKey("AccountId"));
+
+            modelBuilder.Entity<Member>()
+                .Property(m => m.Birthdate)
+                .HasColumnType("datetime2")
+                .HasPrecision(0);
         }
 
 public static ApplicationDbContext Create()
